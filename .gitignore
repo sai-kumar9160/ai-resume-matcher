@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Uploaded resumes (personal data)
+backend/uploads/
+
+# Build output / logs
+dist/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

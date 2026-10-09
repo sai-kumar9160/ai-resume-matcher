@@ -1,0 +1,358 @@
+:root {
+  --primary: #10B981; /* Green for match score */
+  --primary-hover: #059669;
+  --bg-dark: #1E2530; /* Sidebar/Deep background */
+  --bg-panel: #273142; /* Main dashboard panels */
+  --text-main: #F3F4F6;
+  --text-muted: #9CA3AF;
+  --border: #374151;
+  --accent: #3B82F6;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --radius-lg: 12px;
+  --radius-md: 8px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: #171C26;
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Layout */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: var(--bg-dark);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.user-profile {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.nav-links {
+  list-style: none;
+  padding: 1rem 0;
+  flex: 1;
+}
+
+.nav-item {
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-item:hover, .nav-item.active {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+.nav-item.active {
+  border-left: 3px solid var(--text-main);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.top-header h1 {
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+/* Grid System */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.panel {
+  background: var(--bg-panel);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.panel-title {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+/* Specific Panels */
+.score-panel {
+  grid-column: span 3;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.score-gauge {
+  width: 120px;
+  height: 60px;
+  border-top-left-radius: 100px;
+  border-top-right-radius: 100px;
+  border: 15px solid var(--primary);
+  border-bottom: 0;
+  position: relative;
+}
+
+.score-text {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.info-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-tag {
+  background: rgba(255,255,255,0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.col-span-2 { grid-column: span 2; }
+.col-span-1 { grid-column: span 1; }
+
+/* Table styles for Feedback */
+.feedback-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.feedback-table th, .feedback-table td {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.feedback-table th {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* Form */
+textarea {
+  width: 100%;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+}
+
+.upload-area {
+  border: 2px dashed var(--border);
+  padding: 2rem;
+  text-align: center;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  width: 100%;
+  font-weight: bold;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+/* ATS Compatibility Check Styles */
+.ats-check-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ats-check-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.check-icon {
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.check-title {
+  font-weight: 500;
+  flex: 1;
+}
+
+.check-badge {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--primary);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+}
+
+.progress-track {
+  height: 6px;
+  background: var(--bg-dark);
+  border-radius: 3px;
+  margin-left: 2rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+}
+
+/* Job Recommendations Styles */
+.job-card {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.job-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.job-info h3 {
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.job-info p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.job-score {
+  text-align: center;
+  padding-left: 1.5rem;
+  border-left: 1px solid var(--border);
+}
+
+.job-score span {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.job-score small {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.job-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.job-link:hover {
+  text-decoration: underline;
+}
+
+
