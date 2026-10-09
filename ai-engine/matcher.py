@@ -1,12 +1,14 @@
 import sys
 import json
 import html
+import re
 import spacy
 import requests
 from bs4 import BeautifulSoup
 from PyPDF2 import PdfReader
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from ats_checker import analyze_ats
 
 # Load spaCy English model
 try:
@@ -57,6 +59,69 @@ def parse_resume(file_path):
     except Exception:
         return ""
     return text
+
+def build_optimized_docx(file_path, skills):
+    """
+    Add the missing skills to the original DOCX, keeping its formatting.
+    The new line is a copy of the last line in the skills section (same font, size,
+    bullets, bold label), so it looks like it was always part of the resume.
+    Returns the file as base64, or None if it can't be built.
+    """
+    import base64
+    import io
+    from copy import deepcopy
+    import docx
+    from docx.text.paragraph import Paragraph
+
+    if not skills:
+        return None
+    doc = docx.Document(file_path)
+    paras = [p for p in doc.paragraphs if p.text.strip()]
+
+    def is_heading(p):
+        t = p.text.strip()
+        return len(t) < 40 and (t.isupper() or t.istitle()) and ':' not in t
+
+    skills_text = ', '.join(skills)
+    start = next((i for i, p in enumerate(paras) if is_heading(p) and 'skill' in p.text.lower()), None)
+    if start is not None:
+        end = next((i for i in range(start + 1, len(paras)) if is_heading(paras[i])), len(paras))
+        template, label = paras[end - 1] if end - 1 > start else paras[start], "Additional Skills"
+    else:
+        # No skills section: add one at the end, copying the last heading and body line
+        heading = next((p for p in reversed(paras) if is_heading(p)), None)
+        if heading is None:
+            return None
+        new_heading = deepcopy(heading._p)
+        paras[-1]._p.addnext(new_heading)
+        heading_para = Paragraph(new_heading, paras[-1]._parent)
+        for r in heading_para.runs[1:]:
+            r._r.getparent().remove(r._r)
+        heading_para.runs[0].text = "KEY SKILLS" if heading.text.isupper() else "Key Skills"
+        template, label = paras[-1], None
+        paras[-1] = heading_para
+
+    new_p = deepcopy(template._p)
+    (paras[end - 1] if start is not None else paras[-1])._p.addnext(new_p)
+    para = Paragraph(new_p, template._parent)
+    runs = para.runs
+    # "Label: values" lines keep a bold label run and a plain value run
+    label_run = runs[0] if label and runs and runs[0].bold and ':' in template.text else None
+    value_run = next((r for r in runs if not r.bold and r.text.strip()), None) if label_run else None
+    keep = [r for r in (label_run, value_run) if r is not None] or runs[:1]
+    for r in runs:
+        if r not in keep:
+            r._r.getparent().remove(r._r)
+    if label_run is not None and value_run is not None:
+        label_run.text = f"{label}: "
+        value_run.text = skills_text
+    elif keep:
+        keep[0].text = f"{label}: {skills_text}" if label else skills_text
+        keep[0].bold = None if label else keep[0].bold
+
+    out = io.BytesIO()
+    doc.save(out)
+    return base64.b64encode(out.getvalue()).decode('ascii')
 
 def extract_keywords(text):
     """
@@ -135,31 +200,51 @@ def main():
     lines = resume_text.split('\n')
     formatted_body = ""
     skills_injected = False
+    section_words = ("summary", "objective", "profile", "skill", "experience", "education",
+                     "project", "certification", "achievement", "internship", "language",
+                     "interest", "hobbies", "declaration", "training", "award", "strength")
+    name_done = False
+    in_header_block = True  # lines between the name and the first section heading
 
     for line in lines:
-        original_line = line
         line = line.strip()
         if not line:
             continue
         safe_line = html.escape(line)
-            
+        lower = line.lower()
+
         # Guess headers by length and capitalization
         is_header = (len(line) < 40 and (line.isupper() or line.istitle()))
-        
-        if is_header:
-            formatted_body += f"<h2 style='color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; margin-top: 20px;'>{safe_line}</h2>"
+        is_section = is_header and any(w in lower for w in section_words)
+        is_contact = len(line) < 150 and ('@' in line or 'linkedin' in lower or re.search(r'\+?\d[\d\s-]{8,}', line))
+
+        # First line of the resume is the candidate's name
+        if not name_done:
+            formatted_body += f"<h1 class='name'>{safe_line}</h1>"
+            name_done = True
+            continue
+
+        if is_section:
+            in_header_block = False
+
+        if in_header_block and is_contact:
+            formatted_body += f"<p class='contact'>{safe_line}</p>"
+        elif in_header_block and (is_header or '|' in line):
+            formatted_body += f"<p class='job-title'>{safe_line}</p>"
+        elif is_header:
+            formatted_body += f"<h2>{safe_line}</h2>"
 
             # If this is the skills section, inject the missing skills right after it!
-            if not skills_injected and "skill" in line.lower():
-                formatted_body += f"<p style='margin-bottom: 5px; line-height: 1.6; color: #27ae60; font-weight: bold;'>[AI Added] {html.escape(', '.join(missing_skills))}</p>"
+            if not skills_injected and "skill" in lower:
+                formatted_body += f"<p class='ai-added'>[AI Added] {html.escape(', '.join(missing_skills))}</p>"
                 skills_injected = True
         else:
-            formatted_body += f"<p style='margin-bottom: 5px; line-height: 1.6;'>{safe_line}</p>"
+            formatted_body += f"<p>{safe_line}</p>"
 
     # If we didn't find a skills section, append one at the end
     if not skills_injected and len(missing_skills) > 0:
-        formatted_body += f"<h2 style='color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; margin-top: 20px;'>Key Skills (AI Added)</h2>"
-        formatted_body += f"<p style='margin-bottom: 5px; line-height: 1.6; color: #27ae60; font-weight: bold;'>{html.escape(', '.join(missing_skills))}</p>"
+        formatted_body += "<h2>Key Skills (AI Added)</h2>"
+        formatted_body += f"<p class='ai-added'>{html.escape(', '.join(missing_skills))}</p>"
 
     # Create the HTML structure
     optimized_html = f"""
@@ -170,11 +255,20 @@ def main():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Optimized Resume</title>
         <style>
-            body {{ font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #333; }}
+            @page {{ size: A4; margin: 0.75in; }}
+            body {{ font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.15; max-width: 8.27in; margin: 0 auto; padding: 0.75in; box-sizing: border-box; color: #333; }}
+            .name {{ font-size: 22pt; font-weight: bold; color: #2c3e50; margin: 0 0 4pt 0; padding-bottom: 4pt; border-bottom: 2px solid #3498db; }}
+            .job-title {{ font-size: 12pt; font-weight: bold; color: #2c3e50; margin: 2pt 0; }}
+            .contact {{ font-size: 10pt; margin: 2pt 0; }}
+            h2 {{ font-size: 13pt; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 3pt; margin: 12pt 0 6pt 0; }}
+            p {{ font-size: 11pt; margin: 0 0 4pt 0; text-align: justify; }}
+            .ai-added {{ color: #27ae60; font-weight: bold; text-align: left; }}
+            .notice {{ font-size: 10pt; background-color: #eafaf1; border-left: 5px solid #2ecc71; padding: 10px; margin-bottom: 14pt; }}
+            @media print {{ body {{ padding: 0; max-width: none; }} .notice {{ display: none; }} }}
         </style>
     </head>
     <body>
-        <div style="background-color: #eafaf1; border-left: 5px solid #2ecc71; padding: 15px; margin-bottom: 20px;">
+        <div class="notice">
             <strong>Success!</strong> The missing skills required for this job description have been automatically injected into your resume below in green.
         </div>
         <div class="original-content">
@@ -189,8 +283,20 @@ def main():
         "matched_skills": matched_skills[:15],
         "missing_skills": missing_skills[:15],
         "feedback": feedback,
-        "optimized_resume_html": optimized_html
+        "optimized_resume_html": optimized_html,
+        "ats_checks": analyze_ats(resume_path, resume_text)
     }
+    # DOCX uploads also get an edited copy of the original file with the skills added
+    if resume_path.lower().endswith('.docx'):
+        try:
+            # Keywords are lowercased; use the spelling from the job description (AWS, PostgreSQL)
+            cased = []
+            for skill in missing_skills:
+                m = re.search(r'\b' + re.escape(skill) + r'\b', job_description, re.IGNORECASE)
+                cased.append(m.group(0) if m else skill)
+            result["optimized_resume_docx"] = build_optimized_docx(resume_path, cased)
+        except Exception:
+            result["optimized_resume_docx"] = None
     
     print(json.dumps(result))
 

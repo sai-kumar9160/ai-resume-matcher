@@ -12,6 +12,55 @@
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
   --radius-lg: 12px;
   --radius-md: 8px;
+  --bg-body: #171C26;
+  --overlay-faint: rgba(255, 255, 255, 0.02); /* subtle tints over panels */
+  --overlay: rgba(255, 255, 255, 0.05);
+  --overlay-strong: rgba(255, 255, 255, 0.1);
+  color-scheme: dark;
+}
+
+/* Light theme: set by the sun/moon toggle in the sidebar */
+:root[data-theme="light"] {
+  --primary: #059669;
+  --primary-hover: #047857;
+  --bg-dark: #FFFFFF;
+  --bg-panel: #FFFFFF;
+  --bg-body: #F3F4F6;
+  --text-main: #111827;
+  --text-muted: #6B7280;
+  --border: #E5E7EB;
+  --overlay-faint: rgba(17, 24, 39, 0.02);
+  --overlay: rgba(17, 24, 39, 0.05);
+  --overlay-strong: rgba(17, 24, 39, 0.08);
+  color-scheme: light;
+}
+
+body, .sidebar, .panel {
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.theme-toggle {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.25rem;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.theme-toggle button {
+  background: none;
+  border: none;
+  border-radius: 16px;
+  padding: 0.35rem 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  cursor: pointer;
+}
+
+.theme-toggle button.active {
+  background: var(--overlay-strong);
+  color: var(--text-main);
 }
 
 * {
@@ -22,7 +71,7 @@
 
 body {
   font-family: var(--font-family);
-  background-color: #171C26;
+  background-color: var(--bg-body);
   color: var(--text-main);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -44,29 +93,6 @@ body {
   flex-direction: column;
 }
 
-.user-profile {
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--border);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--primary);
-  border-radius: 50%;
-  display: inline-block;
-}
-
 .nav-links {
   list-style: none;
   padding: 1rem 0;
@@ -84,7 +110,7 @@ body {
 }
 
 .nav-item:hover, .nav-item.active {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay);
   color: var(--text-main);
 }
 
@@ -126,7 +152,7 @@ body {
 }
 
 .btn-outline:hover {
-  background: rgba(255,255,255,0.1);
+  background: var(--overlay-strong);
 }
 
 /* Grid System */
@@ -181,7 +207,7 @@ body {
 }
 
 .info-tag {
-  background: rgba(255,255,255,0.1);
+  background: var(--overlay-strong);
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -249,7 +275,7 @@ textarea {
   border-radius: var(--radius-md);
   padding: 1rem;
   margin-bottom: 0.75rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--overlay-faint);
 }
 
 .ats-check-header {
@@ -295,6 +321,33 @@ textarea {
   height: 100%;
   background: var(--primary);
   border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* ATS check states: pass uses the default green */
+.ats-warn .check-icon, .ats-warn .progress-fill { background: #f59e0b; }
+.ats-warn .check-badge { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.ats-fail .check-icon, .ats-fail .progress-fill { background: #ef4444; }
+.ats-fail .check-badge { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.ats-pending .check-icon { background: var(--border); }
+
+.check-icon span {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.check-details, .check-note {
+  margin: 0.5rem 0 0 2rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.check-details {
+  padding-left: 1rem;
+}
+
+.check-details li + li {
+  margin-top: 0.25rem;
 }
 
 /* Job Recommendations Styles */
